@@ -3,19 +3,20 @@ import ReactDOM from 'react-dom';
 import { Script } from '@ckb-lumos/lumos';
 import { capacityOf, generateAccountFromPrivateKey, getTx, transfer } from './lib';
 import { indexer } from './ckb';
+import { decamelizeKeys } from 'humps';
 
 const app = document.getElementById('root');
 ReactDOM.render(<App/>, app);
 
 export function App() {
   // default value: first account privkey from offckb
-  const [privKey, setPrivKey] = useState('0x6109170b275a09ad54877b82f7d9930f88cab5717d484fb4741ae9d1dd078cd6');
+  const [privKey, setPrivKey] = useState('0x022368a3063844b597cc3ddeeedacb1cc02f72722a0a249b6b7d1a4ccb00f482');
   const [fromAddr, setFromAddr] = useState('');
   const [fromLock, setFromLock] = useState<Script>();
   const [balance, setBalance] = useState('0');
 
   // default value: second account address from offckb
-  const [toAddr, setToAddr] = useState('ckt1qzda0cr08m85hc8jlnfp3zer7xulejywt49kt2rr0vthywaa50xwsqt435c3epyrupszm7khk6weq5lrlyt52lg48ucew');
+  const [toAddr, setToAddr] = useState('ckt1qzda0cr08m85hc8jlnfp3zer7xulejywt49kt2rr0vthywaa50xwsq2l4enwahgpapweu36m7wxczsayhhqqa7gyujjcf');
   // default value: 62 CKB
   const [amount, setAmount] = useState('6200000000');
 
@@ -53,11 +54,15 @@ export function App() {
     }
   };
 
-  const onGetTx = async () => {
+  const onGetTxParams = async () => {
     const newTx = await getTx({amount, from: fromAddr, to: toAddr, privKey}).catch(alert);
     if (newTx) {
       setTx(newTx);
-      setTxInfo(JSON.stringify(newTx, null, 2));
+      const snakeCaseNewTx = decamelizeKeys(newTx);
+      snakeCaseNewTx.cell_deps.forEach(dep => {
+        dep.dep_type = 'dep_group';
+      });
+      setTxInfo(JSON.stringify(snakeCaseNewTx, null, 2));
       await updateFromInfo();
     }
   }
@@ -114,9 +119,9 @@ export function App() {
       <br/>
       <button
         disabled={!enabled}
-        onClick={onGetTx}
+        onClick={onGetTxParams}
       >
-        GetTx
+        GetTxParams
       </button>
       {txInfo && <div>{txInfo}</div>}
       <br/>
